@@ -1,5 +1,9 @@
 # -*- coding: utf-8 -*-
 
+import ssl
+ssl._create_default_https_context = ssl._create_unverified_context
+import time # to implement a simple rate limit
+
 import json, re, datetime, sys, random, http.cookiejar
 import urllib.request, urllib.parse, urllib.error
 from pyquery import PyQuery
@@ -289,9 +293,6 @@ class TweetManager:
         if hasattr(tweetCriteria, 'querySearch'):
             urlGetData += tweetCriteria.querySearch
 
-        if hasattr(tweetCriteria, 'excludeWords'):
-            urlGetData += ' -'.join([''] + tweetCriteria.excludeWords)
-
         if hasattr(tweetCriteria, 'username'):
             if not hasattr(tweetCriteria.username, '__iter__'):
                 tweetCriteria.username = [tweetCriteria.username]
@@ -314,15 +315,6 @@ class TweetManager:
 
         if hasattr(tweetCriteria, 'until'):
             urlGetData += ' until:' + tweetCriteria.until
-
-        if hasattr(tweetCriteria, 'minReplies'):
-            urlGetData += ' min_replies:' + tweetCriteria.minReplies
-
-        if hasattr(tweetCriteria, 'minFaves'):
-            urlGetData += ' min_faves:' + tweetCriteria.minFaves
-
-        if hasattr(tweetCriteria, 'minRetweets'):
-            urlGetData += ' min_retweets:' + tweetCriteria.minRetweets
 
         if hasattr(tweetCriteria, 'lang'):
             urlLang = 'l=' + tweetCriteria.lang + '&'
@@ -354,6 +346,15 @@ class TweetManager:
         try:
             response = opener.open(url)
             jsonResponse = response.read()
+            # Hack for rate limits START
+        except urllib.error.HTTPError as e:
+            if e.code == 429:
+                print("\n Recieved error code 429 from Twitter, sleeping 15 minutes to avoid rate limit errors.")
+                time.sleep(900);
+                print("Awakening")
+                response = opener.open(url)
+                jsonResponse = response.read()
+                # Hack for rate limits STOP
         except Exception as e:
             print("An error occured during an HTTP request:", str(e))
             print("Try to open in browser: https://twitter.com/search?q=%s&src=typd" % urllib.parse.quote(urlGetData))
