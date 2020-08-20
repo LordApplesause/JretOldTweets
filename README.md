@@ -1,3 +1,6 @@
+# Whats Modified 
+I have editied tweetmanager.py to add a "sleeper" feature. This will advoid the dreaded "error code 429" to amke the scraping process less of a challenge 
+
 # GetOldTweets3
 A Python 3 library and a corresponding command line utility for accessing old tweets.
 
